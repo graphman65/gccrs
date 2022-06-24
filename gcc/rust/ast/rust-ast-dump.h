@@ -66,7 +66,7 @@ private:
 
   // rust-ast.h
   void visit (Token &tok);
-  void visit (DelimTokenTree &delim_tok_tree);
+  void visit (TokensTree &tok_tree);
   void visit (AttrInputMetaItemContainer &input);
   void visit (IdentifierExpr &ident_expr);
   void visit (Lifetime &lifetime);

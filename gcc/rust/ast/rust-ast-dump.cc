@@ -64,7 +64,7 @@ Dump::visit (Token &tok)
 {}
 
 void
-Dump::visit (DelimTokenTree &delim_tok_tree)
+Dump::visit (TokensTree &tok_tree)
 {}
 
 void
@@ -153,7 +153,9 @@ Dump::visit (NegationExpr &expr)
 
 void
 Dump::visit (ArithmeticOrLogicalExpr &expr)
-{}
+{
+  stream << "arithmetic or logical expression";
+}
 
 void
 Dump::visit (ComparisonExpr &expr)
