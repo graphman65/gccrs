@@ -203,49 +203,52 @@ Attribute::operator= (Attribute const &other)
 }
 
 std::string
-DelimTokenTree::as_string () const
+TokensTree::as_string () const
 {
-  std::string start_delim;
-  std::string end_delim;
-  switch (delim_type)
-    {
-    case PARENS:
-      start_delim = "(";
-      end_delim = ")";
-      break;
-    case SQUARE:
-      start_delim = "[";
-      end_delim = "]";
-      break;
-    case CURLY:
-      start_delim = "{";
-      end_delim = "}";
-      break;
-    default:
-      rust_debug ("Invalid delimiter type, "
-		  "Should be PARENS, SQUARE, or CURLY.");
-      return "Invalid delimiter type";
-    }
-  std::string str = start_delim;
-  if (!token_trees.empty ())
-    {
-      for (const auto &tree : token_trees)
-	{
-	  // DEBUG: null pointer check
-	  if (tree == nullptr)
-	    {
-	      rust_debug (
-		"something really terrible has gone wrong - null pointer "
-		"token tree in delim token tree.");
-	      return "NULL_POINTER_MARK";
-	    }
+  std::string str;
+  bool first = true;
 
-	  str += tree->as_string ();
+  for (const auto &tree : token_trees)
+    {
+      // DEBUG: null pointer check
+      if (tree == nullptr)
+	{
+	  rust_debug ("something really terrible has gone wrong - null pointer "
+		      "token tree in delim token tree.");
+	  return "NULL_POINTER_MARK";
 	}
+
+      if (!first)
+	{
+	  str += " ";
+	}
+
+      first = false;
+      str += tree->as_string ();
     }
-  str += end_delim;
 
   return str;
+}
+
+std::unique_ptr<TokensTree>
+DelimTokenTree::without_delims ()
+{
+  auto begin = get_token_trees ().begin ();
+  auto end = get_token_trees ().end ();
+  auto new_begin = begin + 1;
+  auto new_end = end - 1;
+
+  auto new_token_trees = std::vector<std::unique_ptr<TokenTree>> ();
+  new_token_trees.reserve (new_end - new_begin);
+  for (auto it = new_begin; it != new_end; it++)
+    {
+      new_token_trees.push_back ((*it)->clone_token_tree ());
+    }
+
+  auto new_tree = std::unique_ptr<TokensTree> (
+    new TokensTree (std::move (new_token_trees), get_locus ()));
+
+  return new_tree;
 }
 
 std::string
@@ -350,8 +353,8 @@ Module::as_string () const
 {
   std::string str = VisItem::as_string () + "mod " + module_name;
 
-  // Return early if we're dealing with an unloaded module as their body resides
-  // in a different file
+  // Return early if we're dealing with an unloaded module as their body
+  // resides in a different file
   if (kind == ModuleKind::UNLOADED)
     return str + "\n no body (reference to external file)\n";
 
@@ -361,7 +364,8 @@ Module::as_string () const
   // items
   str += "\n items: ";
 
-  // This can still happen if the module is loaded but empty, i.e. `mod foo {}`
+  // This can still happen if the module is loaded but empty, i.e. `mod foo
+  // {}`
   if (items.empty ())
     {
       str += "none";
@@ -3984,8 +3988,8 @@ Module::process_file_path ()
   auto dir_slash_pos = including_fname.rfind (file_separator);
   std::string current_directory_name;
 
-  // If we haven't found a file_separator, then we have to look for files in the
-  // current directory ('.')
+  // If we haven't found a file_separator, then we have to look for files in
+  // the current directory ('.')
   if (dir_slash_pos == std::string::npos)
     current_directory_name = std::string (".") + file_separator;
   else
@@ -4044,8 +4048,8 @@ Module::load_items ()
 {
   process_file_path ();
 
-  // We will already have errored out appropriately in the process_file_path ()
-  // method
+  // We will already have errored out appropriately in the process_file_path
+  // () method
   if (module_file.empty ())
     return;
 
@@ -4088,7 +4092,7 @@ Attribute::parse_attr_to_meta_item ()
 }
 
 AttrInputMetaItemContainer *
-DelimTokenTree::parse_to_meta_item () const
+TokensTree::parse_to_meta_item () const
 {
   // must have token trees
   if (token_trees.empty ())
@@ -4096,10 +4100,10 @@ DelimTokenTree::parse_to_meta_item () const
 
   /* assume top-level delim token tree in attribute - convert all nested ones
    * to token stream */
-  std::vector<std::unique_ptr<Token> > token_stream = to_token_stream ();
+  std::vector<std::unique_ptr<Token>> token_stream = to_token_stream ();
 
   AttributeParser parser (std::move (token_stream));
-  std::vector<std::unique_ptr<MetaItemInner> > meta_items (
+  std::vector<std::unique_ptr<MetaItemInner>> meta_items (
     parser.parse_meta_item_seq ());
 
   return new AttrInputMetaItemContainer (std::move (meta_items));
@@ -4237,7 +4241,8 @@ AttributeParser::parse_meta_item_inner ()
   //     return std::unique_ptr<MetaListIdents> (
   //       new MetaListIdents (std::move (ident), std::move (ident_items)));
   //   }
-  // // as currently no meta list ident, currently no path. may change in future
+  // // as currently no meta list ident, currently no path. may change in
+  // future
 
   // pass for meta list paths
   std::vector<SimplePath> path_items;
@@ -4282,7 +4287,7 @@ AttributeParser::parse_path_meta_item ()
   switch (peek_token ()->get_id ())
     {
       case LEFT_PAREN: {
-	std::vector<std::unique_ptr<MetaItemInner> > meta_items
+	std::vector<std::unique_ptr<MetaItemInner>> meta_items
 	  = parse_meta_item_seq ();
 
 	return std::unique_ptr<MetaItemSeq> (
@@ -4320,11 +4325,11 @@ AttributeParser::parse_path_meta_item ()
 
 /* Parses a parenthesised sequence of meta item inners. Parentheses are
  * required here. */
-std::vector<std::unique_ptr<MetaItemInner> >
+std::vector<std::unique_ptr<MetaItemInner>>
 AttributeParser::parse_meta_item_seq ()
 {
   int vec_length = token_stream.size ();
-  std::vector<std::unique_ptr<MetaItemInner> > meta_items;
+  std::vector<std::unique_ptr<MetaItemInner>> meta_items;
 
   if (peek_token ()->get_id () != LEFT_PAREN)
     {
@@ -4364,13 +4369,13 @@ AttributeParser::parse_meta_item_seq ()
 
 /* Collects any nested token trees into a flat token stream, suitable for
  * parsing. */
-std::vector<std::unique_ptr<Token> >
-DelimTokenTree::to_token_stream () const
+std::vector<std::unique_ptr<Token>>
+TokensTree::to_token_stream () const
 {
-  std::vector<std::unique_ptr<Token> > tokens;
+  std::vector<std::unique_ptr<Token>> tokens;
   for (const auto &tree : token_trees)
     {
-      std::vector<std::unique_ptr<Token> > stream = tree->to_token_stream ();
+      std::vector<std::unique_ptr<Token>> stream = tree->to_token_stream ();
 
       tokens.insert (tokens.end (), std::make_move_iterator (stream.begin ()),
 		     std::make_move_iterator (stream.end ()));
@@ -4711,12 +4716,12 @@ MetaItemPathLit::check_cfg_predicate (const Session &session) const
 							 lit.as_string ());
 }
 
-std::vector<std::unique_ptr<Token> >
+std::vector<std::unique_ptr<Token>>
 Token::to_token_stream () const
 {
   /* initialisation list doesn't work as it needs copy constructor, so have to
    * do this */
-  std::vector<std::unique_ptr<Token> > dummy_vector;
+  std::vector<std::unique_ptr<Token>> dummy_vector;
   dummy_vector.reserve (1);
   dummy_vector.push_back (std::unique_ptr<Token> (clone_token_impl ()));
   return dummy_vector;
@@ -4727,9 +4732,8 @@ MetaNameValueStr::to_attribute () const
 {
   LiteralExpr lit_expr (str, Literal::LitType::STRING,
 			PrimitiveCoreType::CORETYPE_UNKNOWN, {}, str_locus);
-  // FIXME: What location do we put here? Is the literal above supposed to have
-  // an empty location as well?
-  // Should MetaNameValueStr keep a location?
+  // FIXME: What location do we put here? Is the literal above supposed to
+  // have an empty location as well? Should MetaNameValueStr keep a location?
   return Attribute (SimplePath::from_str (ident, ident_locus),
 		    std::unique_ptr<AttrInputLiteral> (
 		      new AttrInputLiteral (std::move (lit_expr))));
@@ -4744,7 +4748,7 @@ MetaItemPath::to_attribute () const
 Attribute
 MetaItemSeq::to_attribute () const
 {
-  std::vector<std::unique_ptr<MetaItemInner> > new_seq;
+  std::vector<std::unique_ptr<MetaItemInner>> new_seq;
   new_seq.reserve (seq.size ());
   for (const auto &e : seq)
     new_seq.push_back (e->clone_meta_item_inner ());
@@ -4763,12 +4767,12 @@ MetaWord::to_attribute () const
 Attribute
 MetaListPaths::to_attribute () const
 {
-  /* probably one of the most annoying conversions - have to lose specificity by
-   * turning it into just AttrInputMetaItemContainer (i.e. paths-only nature is
-   * no longer known). If conversions back are required, might have to do a
-   * "check all are paths" pass or something. */
+  /* probably one of the most annoying conversions - have to lose specificity
+   * by turning it into just AttrInputMetaItemContainer (i.e. paths-only
+   * nature is no longer known). If conversions back are required, might have
+   * to do a "check all are paths" pass or something. */
 
-  std::vector<std::unique_ptr<MetaItemInner> > new_seq;
+  std::vector<std::unique_ptr<MetaItemInner>> new_seq;
   new_seq.reserve (paths.size ());
   for (const auto &e : paths)
     new_seq.push_back (std::unique_ptr<MetaItemPath> (new MetaItemPath (e)));
@@ -4782,7 +4786,7 @@ MetaListPaths::to_attribute () const
 Attribute
 MetaListNameValueStr::to_attribute () const
 {
-  std::vector<std::unique_ptr<MetaItemInner> > new_seq;
+  std::vector<std::unique_ptr<MetaItemInner>> new_seq;
   new_seq.reserve (strs.size ());
   for (const auto &e : strs)
     new_seq.push_back (
@@ -4882,7 +4886,7 @@ Token::accept_vis (ASTVisitor &vis)
 }
 
 void
-DelimTokenTree::accept_vis (ASTVisitor &vis)
+TokensTree::accept_vis (ASTVisitor &vis)
 {
   vis.visit (*this);
 }

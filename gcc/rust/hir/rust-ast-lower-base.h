@@ -41,7 +41,7 @@ public:
   //  virtual void visit(TokenTree& token_tree);
   //  virtual void visit(MacroMatch& macro_match);
   virtual void visit (AST::Token &tok);
-  virtual void visit (AST::DelimTokenTree &delim_tok_tree);
+  virtual void visit (AST::TokensTree &tok_tree);
   virtual void visit (AST::AttrInputMetaItemContainer &input);
   //  virtual void visit(MetaItem& meta_item);
   //  void vsit(Stmt& stmt);

@@ -47,7 +47,7 @@ ResolverBase::visit (AST::Token &)
 {}
 
 void
-ResolverBase::visit (AST::DelimTokenTree &)
+ResolverBase::visit (AST::TokensTree &)
 {}
 
 void

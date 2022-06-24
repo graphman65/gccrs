@@ -28,7 +28,7 @@ void
 ASTLoweringBase::visit (AST::Token &tok)
 {}
 void
-ASTLoweringBase::visit (AST::DelimTokenTree &delim_tok_tree)
+ASTLoweringBase::visit (AST::TokensTree &tok_tree)
 {}
 void
 ASTLoweringBase::visit (AST::AttrInputMetaItemContainer &input)

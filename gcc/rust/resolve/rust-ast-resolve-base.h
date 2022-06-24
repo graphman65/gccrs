@@ -33,7 +33,7 @@ public:
   virtual ~ResolverBase () {}
 
   void visit (AST::Token &);
-  void visit (AST::DelimTokenTree &);
+  void visit (AST::TokensTree &);
   void visit (AST::AttrInputMetaItemContainer &);
   void visit (AST::IdentifierExpr &);
   void visit (AST::Lifetime &);

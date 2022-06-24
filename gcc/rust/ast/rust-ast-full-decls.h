@@ -30,6 +30,7 @@ class TokenTree;
 class MacroMatch;
 class Token;
 struct Literal;
+class TokensTree;
 class DelimTokenTree;
 class PathSegment;
 class SimplePathSegment;

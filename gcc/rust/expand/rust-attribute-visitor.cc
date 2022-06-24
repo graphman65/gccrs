@@ -324,7 +324,7 @@ AttrVisitor::visit (AST::Token &)
   // shouldn't require?
 }
 void
-AttrVisitor::visit (AST::DelimTokenTree &)
+AttrVisitor::visit (AST::TokensTree &)
 {
   // shouldn't require?
 }

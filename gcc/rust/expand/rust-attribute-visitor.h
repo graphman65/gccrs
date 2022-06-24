@@ -114,7 +114,7 @@ public:
   }
 
   void visit (AST::Token &) override;
-  void visit (AST::DelimTokenTree &) override;
+  void visit (AST::TokensTree &) override;
   void visit (AST::AttrInputMetaItemContainer &) override;
   void visit (AST::IdentifierExpr &ident_expr) override;
   void visit (AST::Lifetime &) override;
