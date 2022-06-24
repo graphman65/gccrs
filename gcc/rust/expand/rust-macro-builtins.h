@@ -101,6 +101,9 @@ public:
 
   static AST::ASTFragment line (Location invoc_locus,
 				AST::MacroInvocData &invoc);
+
+  static AST::ASTFragment stringify (Location invoc_locus,
+				     AST::MacroInvocData &invoc);
 };
 } // namespace Rust
 

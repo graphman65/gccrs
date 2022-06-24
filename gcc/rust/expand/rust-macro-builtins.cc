@@ -480,4 +480,16 @@ MacroBuiltin::line (Location invoc_locus, AST::MacroInvocData &invoc)
   return AST::ASTFragment ({line_no});
 }
 
+AST::ASTFragment
+MacroBuiltin::stringify (Location invoc_locus, AST::MacroInvocData &invoc)
+{
+  auto delim_tree = invoc.get_delim_tok_tree ();
+  auto tree = delim_tree.without_delims ();
+
+  auto stringified
+    = AST::SingleASTNode (make_string (invoc_locus, tree->as_string ()));
+
+  return AST::ASTFragment ({stringified});
+}
+
 } // namespace Rust
